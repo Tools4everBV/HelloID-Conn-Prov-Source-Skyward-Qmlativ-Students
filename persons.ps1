@@ -69,7 +69,6 @@ function get_oauth_access_token {
     )
     Process
     {
-        Add-Type -AssemblyName System.Web
         $pair = [System.Web.HttpUtility]::UrlEncode($ClientKey) + ":" + [System.Web.HttpUtility]::UrlEncode($ClientSecret)
         $bytes = [System.Text.Encoding]::ASCII.GetBytes($pair)
         $bear_token = [System.Convert]::ToBase64String($bytes)
