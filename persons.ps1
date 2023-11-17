@@ -1,30 +1,16 @@
-## Enforce TLS12 Protocal ##
-[System.Net.ServicePointManager]::SecurityProtocol = [System.Net.SecurityProtocolType]::Tls12
+$InformationPreference = "Continue"
+$WarningPreference = "Continue"
+$ErrorPreference = "Stop"
+
+## Enforce TLS Protocol ##
+[Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12 -bor [Net.SecurityProtocolType]::Tls13
 
 #region Initialize Variables
-if($null -eq $configuration){
-    #$config = [ordered]@{
-    #    BaseURI = "https://skyward.iscorp.com/<CUSTOMER NAME>"
-    #    ClientKey = "Tools4Ever"
-    #    ClientSecret = "SECRET"
-    #    PageSize = "500"
-    #    EntityId = "2"
-    #    SchoolYearId = "2"
-    #    FiscalYearId = ""
-    #}
-    $InformationPreference = 'Continue'
-}
-else {
-    $config = ConvertFrom-Json $configuration
-}
+$config = ConvertFrom-Json $configuration
 #endregion Initialize Variables
 
-
-
 #region Support Functions
-#  Source:  https://powershell.one/tricks/performance/group-object#faster-group-object-for-data-separation
-function Group-ObjectHashtable
-{
+function Group-ObjectHashtable {
     param
     (
         [string[]]
@@ -63,21 +49,23 @@ function Group-ObjectHashtable
 function get_oauth_access_token {
     [cmdletbinding()]
     Param (
-        [string]$BaseURI,
         [string]$ClientKey,
-        [string]$ClientSecret
+        [string]$ClientSecret,
+        [string]$IntegrationKey
     )
     Process
     {
-        $pair = [System.Web.HTTPUtility]::UrlEncode($ClientKey) + ":" + [System.Web.HTTPUtility]::UrlEncode($ClientSecret)
-        $bytes = [System.Text.Encoding]::ASCII.GetBytes($pair)
-        $bear_token = [System.Convert]::ToBase64String($bytes)
-        $auth_headers = @{ Authorization = "Basic " + $bear_token }
-    
-        $uri =  "$($BaseURI)/oauth/token?grant_type=client_credentials"
+        $headers = @{ 
+                            "Content-Type" = "application/x-www-form-urlencoded"
+                            "Suppress-Development-Permissions" = $true
+        }
+
+        $body = "grant_type=client_credentials&client_id={0}&client_secret={1}" -f [System.Web.HttpUtility]::UrlEncode($ClientKey), [System.Web.HttpUtility]::UrlEncode($ClientSecret)
+        
+        $uri =  "https://skyward-api.global.cloud.nimsuite.com/{0}/oauth/token" -f $IntegrationKey
         Write-Information ($uri)
         try{
-        $result = Invoke-RestMethod -Method GET -Headers $auth_headers -Uri $uri -UseBasicParsing
+        $result = Invoke-RestMethod -Method POST -Headers $headers -Uri $uri -Body $body -UseBasicParsing
         }catch
         {
             Write-Information ($error[0].exception.innerexception)
@@ -100,9 +88,9 @@ function get_data_objects {
         Write-Information ("Retrieving Access Token - {0}" -f (Get-Date))
          
         $AccessToken = (get_oauth_access_token `
-            -BaseURI $config.BaseURI `
             -ClientKey $config.ClientKey `
-            -ClientSecret $config.ClientSecret).access_token
+            -ClientSecret $config.ClientSecret `
+            -IntegrationKey $config.IntegrationKey).access_token
          
         $headers = @{ Authorization = "Bearer $($AccessToken)" }
         
@@ -268,12 +256,10 @@ function get_data_objects {
 
 #region Get Data
 try{
-    $mc = Measure-Command{
 		#SchoolYears
 		$splat = @{
 			ModuleName = "District"
 			ObjectName = "SchoolYear"
-			#SearchFields = '*'
 			SearchFields = ("SchoolYearID,Description,IsCurrentYearForProvidedEntity,NumericYear,NextNumericYear") -split ","
 			LongSearchCondition = @{
 					#HasStudentEntityYearForCurrentSchoolYear
@@ -295,14 +281,14 @@ try{
 		$splat = @{
 			ModuleName = "Student"
 			ObjectName = "Student"
-			#SearchFields = ( ("CalculatedGradYear,CalculatedGrade,CalculatedStudentStateID,EarliestDistrictEnrollmentDate,GradYear,Grade,GradeNumeric,GraduationDate,HasStudentEntityYearForCurrentSchoolYear,IsCurrentActive,IsCurrentActiveDefaultEnrollment,IsGraduated,MaskedStudentNumber,NameID,StudentID,StudentNumber") -split ",") #`  CurrentDefaultEntityIsActive,LocationDateToUse,Location,LocationEntityID,LocationSchoolYearID,
-			SearchFields = ( ("GradYear,Grade,GradeNumeric,GraduationDate,HasStudentEntityYearForCurrentSchoolYear,IsCurrentActive,IsCurrentActiveDefaultEnrollment,IsGraduated,MaskedStudentNumber,NameID,StudentID,StudentNumber") -split ",") #`  CurrentDefaultEntityIsActive,LocationDateToUse,Location,LocationEntityID,LocationSchoolYearID,
-			LongSearchCondition = @{
-					#HasStudentEntityYearForCurrentSchoolYear
+			SearchFields = ( ("GradYear,Grade,GradeNumeric,GraduationDate,IsCurrentActive,IsGraduated,MaskedStudentNumber,NameID,StudentID,StudentNumber") -split ",")
+			<#LongSearchCondition = @{
+					#IsCurrentActive
 						"ConditionType"= "Equal"
-						"FieldName"="HasStudentEntityYearForCurrentSchoolYear"
+						"FieldName"="IsCurrentActive"
 						"Value"=1
-				}
+			}#>
+            
 		}
 		$Students = get_data_objects @splat
 
@@ -310,13 +296,7 @@ try{
 		$splat = @{
 			ModuleName = "Staff"
 			ObjectName = "Staff"
-			SearchFields = ( ("StaffID,FullNameFL,FullNameFML,IsActiveForDistrict,IsCurrentStaffEntityYear,NameID,StaffNumber") -split ",") #`  CurrentDefaultEntityIsActive,LocationDateToUse,Location,LocationEntityID,LocationSchoolYearID,
-			#LongSearchCondition = @{
-			#		#HasStudentEntityYearForCurrentSchoolYear
-			#			"ConditionType"= "Equal"
-			#			"FieldName"="HasStudentEntityYearForCurrentSchoolYear"
-			#			"Value"=1
-			#	}
+			SearchFields = ( ("StaffID,FullNameFL,FullNameFML,IsActiveForDistrict,IsCurrentStaffEntityYear,NameID,StaffNumber") -split ",")
 		}
 		$Staff = get_data_objects @splat
         $Staff_ht_StaffID = $Staff | Group-ObjectHashtable -Property 'StaffID'
@@ -325,13 +305,12 @@ try{
 		$splat = @{
 			ModuleName = "Demographics"
 			ObjectName = "Name"
-			#SearchFields = ("NameID,Age,BirthDate,CalculatedPrimaryFormattedPhoneNumber,FirstInitial,FirstInitialLegal,FirstName,FirstNameLegal,FullNameFL,FullNameLegalFL,Gender,Initials,InitialsLegal,IsCurrentStudent,IsEmployeeName,IsGuardianName,IsStaffName,IsStudentInDistrict,IsStudentName,LastInitial,LastInitialLegal,LastName,LastNameLegal,MiddleInitial,MiddleInitialLegal,MiddleName,MiddleNameLegal,NameAddressMailingID,NameKey,SkywardID,TitledName" -split ',')
 			SearchFields = ("NameID,Age,BirthDate,CalculatedPrimaryFormattedPhoneNumber,FirstName,FullNameFL,Gender,Initials,IsCurrentStudent,IsStudentInDistrict,IsStudentName,LastName,MiddleName,NameKey,SkywardID" -split ',')
-			LongSearchCondition = @{
+			<#LongSearchCondition = @{
 				"ConditionType"= "Equal"
-				"FieldName"="IsCurrentStudent"
+				"FieldName"="IsStudentInDistrict"
 				"Value"=1
-			}
+			}#>
 		}
 		$Demographics = get_data_objects @splat
 		$Demographics_ht = $Demographics | Group-ObjectHashtable -Property 'NameID'
@@ -362,21 +341,10 @@ try{
 		$Email_empty = @{}
 		$Email[0].PSObject.Properties.ForEach({$Email_empty[$_.name -Replace '\W','_'] = ''})
 
-		#Enrollment StudentEntityYear
-		# Not used.  More data comes out of the EntryWithdrawn object table.
-		#$splat = @{
-		#    ModuleName = "Enrollment"
-		#    ObjectName = "StudentEntityYear"
-		#    SearchFields = ( ("StudentEntityYearID,EntityID,HomeroomID,IsActive,IsDefaultEntity,NameID,SchoolYearID,StaffIDAdvisor,StudentID,WithdrawalDate") -split ",")
-		#}
-		#$StudentEntityYear = get_data_objects @splat
-		#$StudentEntityYear_ht = $StudentEntityYear | Group-ObjectHashtable -Property NameID 
-		
 		#Enrollment EntryWithdrawal
 		$splat = @{
 			ModuleName = "Enrollment"
 			ObjectName = "EntryWithdrawal"
-			#SearchFields = ("EntryWithdrawalID,CalendarID,EndDate,EnrolledAtLeastOneDay,EntityID,EntryCodeID,EntryComment,GradeReferenceID,IsCurrentOrFutureEnrollment,IsDefaultEntity,IsHistoricalEnrollment,IsNoShow,IsPrimarySchool,IsStartDateOnOrAfterFirstDayOfSchool,SchoolID,SchoolYearID,StartDate,StatusChangeEntry,StatusChangeWithdrawal,StudentID,StudentTypeID,WithdrawalCodeID,WithdrawalComment,WithdrawalDate" -split ',')
 			SearchFields = ("EntryWithdrawalID,EndDate,EntityID,IsDefaultEntity,SchoolID,SchoolYearID,StartDate,StudentID,StudentTypeID,WithdrawalDate" -split ',')
 		}
 		$Enrollments = get_data_objects @splat
@@ -418,11 +386,6 @@ try{
 			ModuleName = "Scheduling"
 			ObjectName = "Meet"
 			SearchFields = ('MeetID,SectionID' -split ',')
-			#LongSearchCondition = @{
-			#	"ConditionType"= "Equal"
-			#	"FieldName"="IsPrimary"
-			#	"Value"=1
-			#}
 		}
 		$Meet = get_data_objects @splat
 		$Meet_ht = $Meet | Group-ObjectHashtable -Property 'SectionID'
@@ -432,11 +395,6 @@ try{
 			ModuleName = "Scheduling"
 			ObjectName = "StaffMeet"
 			SearchFields = ('MeetID,HasGradebookAccess,SectionID,StaffID,IsPrimary' -split ',')
-			#LongSearchCondition = @{
-			#	"ConditionType"= "Equal"
-			#	"FieldName"="IsPrimary"
-			#	"Value"=1
-			#}
 		}
 		$StaffMeet = get_data_objects @splat
 		$StaffMeet_ht_MeetID = $StaffMeet | Group-ObjectHashtable -Property 'MeetID'
@@ -447,12 +405,6 @@ try{
 			ModuleName = "Scheduling"
 			ObjectName = "MeetSummary"
             SearchFields = ('MeetID,Period,Days,IsPrimary' -split ',')
-        #   2021-12-01 - T4e JA - Removed IsPrimary filter 
-		#	LongSearchCondition = @{
-		#		"ConditionType"= "Equal"
-		#		"FieldName"="IsPrimary"
-		#		"Value"=1
-		#	}
 		}
 		$MeetSummary = get_data_objects @splat
 		$MeetSummary_ht = $MeetSummary | Group-ObjectHashtable -Property 'MeetID'
@@ -461,12 +413,9 @@ try{
 		$splat = @{
 			ModuleName = "Scheduling"
 			ObjectName = "Section"
-			#SearchFields = ('SectionID,Code,CourseCodeSectionCode,CourseCodeSectionCodeCourseDescription,CourseDescriptionCodeSectionCode,CourseID,EffectiveTeacherFirstLastName,EffectiveTeacherLastFirstName,EntityCodeTeacherNumber,EntityID,HasStudentSections,HomeroomID,IsActive,IsActiveOverride,IsAHistoricRecord,IsCurrentYear,IsInProgress,SchoolYearID' -split ',')
             SearchFields = ('SectionID,Code,CourseCodeSectionCode,CourseCodeSectionCodeCourseDescription,CourseDescriptionCodeSectionCode,CourseID,EffectiveTeacherFirstLastName,EntityCodeTeacherNumber,EntityID,IsActive' -split ',')
 		}
 		$Section = get_data_objects @splat
-        #    Add Period Info To Section Data (Primary Only) - Disabled logic due to the removal of 'IsPrimary' from the MeetSummary data.
-        #$Section | %{$_ | Add-Member -Force -NotePropertyName 'Period' -NotePropertyValue ($(if ($null -ne $Meet_ht["$($_.SectionID)"]) {$MeetSummary_ht["$($Meet_ht["$($_.SectionID)"][0].MeetID)"][0].Period} else {''})) }
 		$Section_ht = $Section | Group-ObjectHashtable -Property 'SectionID'
 		$Section_empty = @{}
 			$Section[0].PSObject.Properties.ForEach({$Section_empty[$_.name -Replace '\W','_'] = ''})
@@ -475,7 +424,6 @@ try{
 		$splat = @{
 			ModuleName = "Scheduling"
 			ObjectName = "Course"
-			#SearchFields = ('CourseID,CodeDescription,CourseCode,CourseGroupDescriptions,DepartmentID,Description,EntityID,IsActive,IsAHistoricRecord,IsCoreAcademic,IsCurrentSchoolYear,SchoolYearID' -split ',')
             SearchFields = ('CourseID,CodeDescription,CourseCode,CourseGroupDescriptions,DepartmentID,Description,EntityID' -split ',')
 		}
 		$Course = get_data_objects @splat
@@ -488,7 +436,6 @@ try{
 		$splat = @{
 			ModuleName = "Enrollment"
 			ObjectName = "School"
-			#SearchFields = ('SchoolID,BuildingID,CalculatedStateSchoolCode,Code,CodeName,DistrictID,GradeLevelIDHigh,GradeLevelIDLow,HasDualEnrollment,HasWiFi,IsAlternative,IsCEP,IsCharter,IsEntireSchoolMagnet,IsMagnet,IsNonLEA,IsSpecialEducation,IsTitleISchoolwide,Name,SchoolYearID,StaffIDPrincipal,StateAssignedID,StateBuildingCode,Type,TypeCode' -split ',')
             SearchFields = ('SchoolID,BuildingID,Name,StaffIDPrincipal,Type' -split ',')
 		}
 		$School = get_data_objects @splat
@@ -521,9 +468,6 @@ try{
 		}
 		$User = get_data_objects @splat
 		$User_ht = $User | Group-ObjectHashtable -Property 'NameID'
-		
-    }
-    Write-Information "## Source Data pulled in $($mc.days):$($mc.hours):$($mc.minutes):$($mc.seconds).$($mc.milliseconds)"
 }
 catch
 {
@@ -533,13 +477,11 @@ catch
 #endregion Get Data
 
 #region Process Return Model
-$mc = Measure-Command {
-	$return = [System.Collections.Generic.List[psobject]]::new()
 	foreach($p in $Students)
 	{
 		$person = [ordered]@{
 			ExternalId = $p.NameID
-			DisplayName = $Demographics_ht["$($p.NameID)"].FullNameFL
+			DisplayName = "{0} ({1})" -f $Demographics_ht["$($p.NameID)"].FullNameFL, $p.StudentNumber 
 		}
 		#Student Fields
 		foreach($prop in $p.PSObject.properties)
@@ -586,7 +528,6 @@ $mc = Measure-Command {
 				Team_Code			= ''
 				Team_Name			= ''
 				Manager_DisplayName = ''
-				#ADGroups            = ""
 			}
             # Bump up priority for Default Entity
             if($enrollment.IsDefaultEntity)
@@ -598,7 +539,6 @@ $mc = Measure-Command {
 		}
 		
 		# Class Enrollments
-		#    NOTE:  ($EntitySchool | ? EntityID -eq 33) | Sort-Object "IsDefaultSchoolForEntity" -Descending
 		foreach($ss in $StudentSection_ht["$($p.StudentID)"])
 		{
 			$_Section	= $Section_ht["$($ss.SectionID)"][0]
@@ -619,19 +559,12 @@ $mc = Measure-Command {
 				Team_Code			= '{0}' -f $_Course.CourseCode 
 				Team_Name			= '{0}' -f $_Course.Description
 				Manager_DisplayName = '{0}' -f $_Section.EffectiveTeacherFirstLastName
-                #ADGroups            = $(if($null -eq $ss.EndDate -OR (Get-Date).AddDays(-1) -lt $ss.EndDate){$_Section.ADGroups}else{''})
 			}
 			
 			$person["Contracts"].Add($contract)
 		}
 		
-		$return.Add($person)
+	    $person | ConvertTo-JSON -depth 20
         
 	}
-}
 #endregion Process Return Model
-
-#region Return Data to HelloID
-Write-Information "Processed Employee Person & Contract Record(s). $($return.count) returned in $($mc.days):$($mc.hours):$($mc.minutes):$($mc.seconds).$($mc.milliseconds)"
-$return | %{write-output ($_ | ConvertTo-Json -depth 20)}
-#endregion Return Data to HelloID
