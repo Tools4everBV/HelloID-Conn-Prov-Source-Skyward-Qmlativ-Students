@@ -14,10 +14,18 @@ HelloID Provisioning Source Connector for Skyward Qmlativ Custom API
 ## Table of Contents
 - [Available Data](#available-data)
 - [Setting up the API Access](#setting-up-the-api-access)
-  - [General Notes](#general-notes)
-  - [API User](#api-user)
-  - [API User Access](#api-user-access)
-  - [Integration Access Secrets](#integration-access-secrets)
+  - [Navigating to the integration list](#navigating-to-the-integration-list)
+  - [Explanation of the integration list](#explanation-of-the-integration-list)
+  - [Starting integration access setup](#starting-integration-access-setup)
+  - [Add Integration Access Workflow](#add-integration-access-workflow)
+  - [Additional Configuration](#additional-configuration)
+      - [OneRoster Configuration](#oneroster-configuration)
+      - [Adding a OneRoster Configuration](#adding-a-oneroster-configuration)
+      - [Custom API Configuration](#custom-api-configuration)
+  - [Saving Integration Access](#saving-integration-access)
+  - [Completing the Add Integration Access Workflow](#completing-the-add-integration-access-workflow)
+  - [Starting the generate secret workflow](#starting-the-generate-secret-workflow)
+  - [Completing the workflow](#completing-the-workflow)
 - [Configure HelloID](#configure-helloid)
 - [HelloID docs](#helloid-docs)
 
@@ -26,64 +34,117 @@ HelloID Provisioning Source Connector for Skyward Qmlativ Custom API
 Access to data is controlled by Skyward approval. Please refer to the [Intergation Access XML](/IntegrationAccess.xml) for specifics to which table and fields are available. Also, it refers to what CRUD action are available as well.
 
 ## Setting up the API Access
-### General Notes
-Each API Vendor should have an Integration record available in Qmlativ.
 
- ![image](https://github.com/Tools4ever-NIM/NIM-System-REST-Skyward-Qmlativ/assets/24281600/64e32e13-72a4-466e-a453-cb0ac99aa9ad)
+### Navigating to the integration list
+![image](https://github.com/Tools4ever-NIM/NIM-System-REST-Skyward-Qmlativ/assets/24281600/a7d41a3d-4d01-459d-89b4-86fa461e05af)
 
-The APIs used by an Integration can also be viewed from the Integration List screen by looking at the lower browse.  The APIs may also be viewed from the Integration APIs tab on the Integration Details screen.
+Every Integration will have a record available within Qmlativ, which you can view by navigating to the Integration List screen. To locate this list of Integrations:
+1.	Open the Main menu within Qmlativ.
+2.	Select the Administrative Access portal.
+3.	Choose the API module.
+4.	Select the Integration feature.
 
- ![image](https://github.com/Tools4ever-NIM/NIM-System-REST-Skyward-Qmlativ/assets/24281600/e629fce7-210e-4eac-8cf8-7c1e84ec4d37)
+### Explanation of the integration list
+![image](https://github.com/Tools4ever-NIM/NIM-System-REST-Skyward-Qmlativ/assets/24281600/476cf836-4202-471c-a73b-b14ea22be6b8)
 
-If the vendor has indicated that they are using the Custom API, select it to see which Objects and Fields are being used, and what types of access they have to them.
+On the Integration List screen, you will see a list of Integrations. By default, these Integrations are sorted by the Vendor Name (1) and then by the Product Name (2), which should make the Integrations easy to locate within the list.
+The Description (3) column provides an explanation of the purpose of the Integration, and should help you, as the district, determine if the Integration will be useful for your district.
+The Status (4) column shows the current state of the Integration, such as whether it is Available or if it has been Discontinued.  A Discontinued Integration that appears for you is one that has either recently been discontinued from use or one that you have used in the past which is no longer available.
 
- ![image](https://github.com/Tools4ever-NIM/NIM-System-REST-Skyward-Qmlativ/assets/24281600/2a5f2eff-4c45-4ba1-a5c8-b6dfb29cc781)
+The Has Development Permissions (5) column provides an indication of whether the Integration is allowed to access your environment while it is in development by the vendor.  In a Live environment, this should display as unchecked, however, in a Training environment, you may see this item checked if you are working with a vendor for development purposes.
 
-An Integration Access record is required to grant Qmlativ API access, similar to the API User record.
-If the vendor has requested to set up new Integration Access credentials and their Integration is not visible in the Integration List, please reach out to Skyward to ensure that the Integration Sync process is working properly.
+The Can Generate Secret (6) column provides an indication as to whether you, as the district, are allowed to generate the secret that is used for the Integration’s authentication. If this box is checked, the vendor has enabled the option and expects that you will provide the secret to them using a secure method so they may authenticate with Qmlativ (see the Vendor Integration Setup below).  If this option is unchecked, the vendor has chosen to manage secret authentication themselves using Skyward’s secure Partner Portal.
 
-### API User
-A new Integration Access record should exist for each active API User record.
-API User records may be found under the API area by selecting the User feature:
+### Starting integration access setup
+![image](https://github.com/Tools4ever-NIM/NIM-System-REST-Skyward-Qmlativ/assets/24281600/4420329a-9d57-4a51-9d52-9fe22dc9ef89)
 
- ![image](https://github.com/Tools4ever-NIM/NIM-System-REST-Skyward-Qmlativ/assets/24281600/13404ad4-8452-4efa-92a1-505245b443a8)
+From the Integration List screen, click the Open (1) button on the Integration for which you want to grant access, this will take you to the Integration Details screen.
 
-You may find/create Integration Access records by going to the API area and select the Integration Access feature:
+![image](https://github.com/Tools4ever-NIM/NIM-System-REST-Skyward-Qmlativ/assets/24281600/e61b79ab-b16b-4718-8ae7-8994ba3cf620)
 
- ![image](https://github.com/Tools4ever-NIM/NIM-System-REST-Skyward-Qmlativ/assets/24281600/2441eb2e-3bb1-40f2-a823-f6a65cfffe88)
+On the Integration Details screen, select the Integration Accesses (1) tab, which will display a list of Integration Access records available for this Integration (note that no records will display when you first view this screen). Click the Add Integration Access (2) button to begin the Add Integration Access workflow.
 
-Integration Access records can also be found/created from the Integration Details screen.
+### Add Integration Access Workflow
+![image](https://github.com/Tools4ever-NIM/NIM-System-REST-Skyward-Qmlativ/assets/24281600/5e8f663c-411f-4a7d-8581-e9ba373dbeda)
 
- ![image](https://github.com/Tools4ever-NIM/NIM-System-REST-Skyward-Qmlativ/assets/24281600/19180006-f55e-40c3-864d-16a5bdc821b4)
+In the Add Integration Access Workflow, you will need to set the following fields on the Integration:
 
-It is recommended to copy most of the API User’s settings into the Integration Access.
+1.	Name (required): This is a “friendly” name that allows the district to easily identify the Integration Access and allow the district to differentiate it from another Integration Access for the same Integration. It is often useful to name this with the Integration’s name plus the year or purpose of the access being granted, such as “{Integration} 2023” or “{Integration} Vendor Testing”. Note: this name does not affect the access credentials used to connect to the API(s).
+2.	Description (optional): This description allows you to provide more details on the purpose of the Integration Access if the Name field does not provide enough context.
+3.	Integration (required): When starting the Add Integration Access Workflow from the Integration Details screen, the Integration will be automatically set to the Integration which was selected at the start of the workflow. When starting the workflow from other locations, such as the Integration Access List screen, this field will need to be filled in with the name of the Integration to which you are granting access.
+4.	Key (required): This key functions as the Client Key or “username” by the third-party vendor when authenticating with Qmlativ’s APIs. This value must be unique, and the third-party vendor may require that the value be configured to a specific value (see Vendor Integration Setup below).
+5.	Authentication Type (required): The indicates the type(s) of authentication are available to the third-party vendor when authenticating with Qmlativ.  Skyward recommends setting this option to “Any”, as this will allow the vendor to access the Integration using their preferred authentication type, and it will not require any changes to be made if other authentication types are added or removed in the future.
+a.	NOTE: “Basic” is currently offered as an option for the authentication type, but this option will be removed at the start of the 2024-25 school year and is not recommended.
+6.	Is Active (required): Indicates whether the Integration Access is active.
+7.	Effective Date (required): The date from which the Integration Access becomes available to the third-party vendor.
+8.	Expiration Date (optional): The date after which the Integration Access is no longer available to the third-party vendor.
+•	NOTE: an Integration Access is only truly active if the “Is Active” checkbox is checked and if the current date falls after the Effective Date and before the Expiration Date. If no Expiration Date is provided, then the Integration Access will not expire, and will remain active as long as the “Is Active” box is checked, and the current date is after the Effective Date.
 
-![image](https://github.com/Tools4ever-NIM/NIM-System-REST-Skyward-Qmlativ/assets/24281600/5764c1ec-85ad-4138-b6b5-273af858544e)
+### Additional Configuration
+![image](https://github.com/Tools4ever-NIM/NIM-System-REST-Skyward-Qmlativ/assets/24281600/a04620e8-e28c-4792-9126-1f036ff9b743)
 
-![image](https://github.com/Tools4ever-NIM/NIM-System-REST-Skyward-Qmlativ/assets/24281600/153329dc-a7d7-4f4f-87bc-b543391212ab)
+Beyond the above settings on the Add Integration Access workflow, there may be additional configuration necessary depending on the APIs used by the third-party Integration. If any additional configuration is necessary, a Configuration section will appear below the Expiration Date.
 
-The areas highlighted in red (1-4) can be taken from the API User record. The area highlighted in blue (5) can be taken from the API User Access records associated with the API User record. These values can also be changed to something new but keeping them the same reduces the possibility of errors during the initial conversion.
+#### OneRoster Configuration
+Description: the OneRoster API allows third-party Integrations access to rostering information, such as name and certain demographic information, as well as information related to scheduling and grading.
 
-**NOTE**: _OAuth1 as an Authentication Type has been removed for the Integration Access system. Each vendor that used OAuth1 should migrate to OAuth2 for the new Integration Access system._
+![image](https://github.com/Tools4ever-NIM/NIM-System-REST-Skyward-Qmlativ/assets/24281600/92e47b65-5598-4e41-b159-55b7b5137bda)
 
-### API User Access
+![image](https://github.com/Tools4ever-NIM/NIM-System-REST-Skyward-Qmlativ/assets/24281600/830d4ac9-37b1-4f84-a2cd-a67bfcc3e0c1)
 
-One of the main benefits of the Integration Access system is that each Integration is already pre-packaged with which APIs it uses, and therefore with which configuration records it is associated. When configuring an Integration Access, selecting the vendor’s Integration will automatically display the expected API Configuration sections.
-Here is an example of the Integration Access screen when the selected Integration uses all APIs. As you can see, the Configuration section displays all configuration options for the APIs:
+Click the arrow (1) next to the OneRoster Configuration selector, this will display a list of available OneRoster Configurations. Click the Select (2) button next to the appropriate configuration, if one is available, or click the Add One Roster Configuration (3) button to add a new configuration.
 
- ![image](https://github.com/Tools4ever-NIM/NIM-System-REST-Skyward-Qmlativ/assets/24281600/1318e043-58d0-48c3-89d5-4dab27c9ff71)
+#### Adding a OneRoster Configuration
+![image](https://github.com/Tools4ever-NIM/NIM-System-REST-Skyward-Qmlativ/assets/24281600/29b2ea02-e3d6-4ee2-b195-f105355644e0)
 
-**NOTE:** _OneRoster, Time Tracking, Identification, Attendance, and Enrollment Configuration records can be shared between the API User Access and Integration Access records._
+On the Add One Roster Configuration workflow, you will need to fill in several fields:
+1.	One Roster Vendor (required): this is the name of the vendor as configured for the purposes of OneRoster communications. Click the arrow next to the selector to select the name of an existing vendor or click the Add One Roster Vendor button within the list to add a new vendor.  The workflow for adding a new vendor contains a single field, which is the vendor’s name.
+2.	Code (required): this is a generic code that can be used to identify the OneRoster configuration.
+3.	Description (optional): this description allows you to provide additional context for the configuration, such as notes about a specific vendor or Integration.
+4.	District (required): select your district from the list.
+5.	Allow Grade Pass Back (optional): this option allows the third-party vendor’s Integration to write grade information back into Qmlativ. 
+a.	NOTE: Selecting this option requires additional licensing from Skyward for the grade pass back to function. If you are uncertain if your district has the appropriate licensing, you may look in Administrative Access > System > System Profile, then select the Products Owned tab and search for the “QM OneRoster API with writeback” product. If you do not have this products owned record available and would like to use the grade pass back option, please contact your Sales Representative.
 
-Custom API Entities is a new entity selector that controls which entities the vendor has access to.  For Integrations that use the Custom API, the modules, objects, and fields that are used by the Integration are now visible on the “Integration Objects” tab, so the old “Allow Security Module Write Operations” checkbox that was on the API User Access is now obsolete.
+#### Custom API Configuration
+Description: the Custom API allows third-party Integrations to potentially access any field within Qmlativ.  However, the fields to which they have access are limited based on review by Skyward.  
 
-### Integration Access Secrets
-Secrets work differently in the Integration Access system than they did in the API User system. In all situations, it is not possible for districts to generate their own complete set of API credentials. 
+To see a list of the fields to which an Integration has access, you can navigate to Administration Access > API > Integration, open the specific Integration from the list, then click on the Integration APIs tab. On the Integration APIs tab, select the Custom API from the list, and a list of Integration Objects and Integration Fields will be displayed in the lists below.
 
-* For vendors who do not enable the district to create their own Secret, only a Key and Secret is required to authenticate themselves in the Qmlativ API. 
-* For vendors who enable the district to create their own Secret, there is a hidden third value stored by the vendor that enables the Integration Access connection.
+![image](https://github.com/Tools4ever-NIM/NIM-System-REST-Skyward-Qmlativ/assets/24281600/2c1b3a27-0a06-406c-9b90-60d4a17f90b4)
 
-Secrets generated for Integration Access can only be viewed once; they cannot be retrieved after closing the confirmation dialog.
+![image](https://github.com/Tools4ever-NIM/NIM-System-REST-Skyward-Qmlativ/assets/24281600/59f07ae6-fcfd-4699-acd1-6d735062452e)
+
+Click the magnifying glass (1) next to the Custom API Entities selector, this will display a list of available Entities.  Check the boxes (2) next to the Entities that you want the Integration to access when using the Custom API.
+
+NOTE: in a single-district configuration, it is common to select all Entities from the list, so that the Integration may access information from the entire district.  However, there may be situations where limiting access to specific Entities may be required, such as for certain licenses (for instance, if a high school uses an Integration, but the elementary school does not).
+
+In a multi-district configuration, it is common to create a separate Integration Access for each district that is utilizing the Integration, and then limiting the Integration Access to the entities within that specific district.  This will allow more granular control on a district-by-district basis.
+
+### Saving Integration Access
+![image](https://github.com/Tools4ever-NIM/NIM-System-REST-Skyward-Qmlativ/assets/24281600/3d548330-b3f5-4824-9774-611b40e911e6)
+
+After filling in the main section of the Add Integration Access workflow (1) and any additional configuration (2), click the Save button to complete the first step of the workflow.
+
+### Completing the Add Integration Access Workflow
+![image](https://github.com/Tools4ever-NIM/NIM-System-REST-Skyward-Qmlativ/assets/24281600/d4d08b4d-7689-4e64-b141-4e48047f1ed4)
+
+After saving the workflow, you will be presented with a window indicating that the process was completed successfully, which means the Integration Access record was created.  
+
+If the Integration allows you to generate a secret, you will have a Generate Secret (1) button displayed at the top along with the Close (2) button.  If you are not allowed to generate the secret, you will only see the Close button.  Click the Generate Secret (1) button to generate a secret for this Integration Access.
+
+NOTE: the Generate Secret button will generally only be available to you if the third-party vendor offers a form of self-setup for the Integration or if the Integration is being used from a physical device that requires setup at the district (such as a time tracking device). This option is entirely dependent upon the third-party vendor’s Integration setup, and when available, should include instructions in the Vendor Integration Setup section below.
+
+### Starting the generate secret workflow
+![image](https://github.com/Tools4ever-NIM/NIM-System-REST-Skyward-Qmlativ/assets/24281600/4039db4e-c90b-4d63-9339-f481616b7095)
+
+If you clicked the Generate Secret button above, you will automatically begin the Generate Secret Workflow. However, if you clicked the Close button instead, or you otherwise need to generate a new secret for an Integration, you can navigate to the Integration Accesses tab (1) on the Integration Details screen, as explained above, and look at the Can Generate Secret column (2) to see if you are allowed to generate a secret.  If you can generate a secret, you can click the down arrow on the row (3) and click the Generate Secret button to start the workflow, and you can continue the workflow as outlined in the Completing the Add Integration Access step above.
+
+### Completing the workflow
+![image](https://github.com/Tools4ever-NIM/NIM-System-REST-Skyward-Qmlativ/assets/24281600/12a308e4-2e5e-4fe4-ab3b-6a82538a96d0)
+
+After starting the Generate Secret Workflow, you will need to copy the Secret that is generated from the box on the screen.  To make this easy, you can click the Copy (1) button.  Once you have copied the information, you need to make sure the I Have Copied This Data (2) box has been checked (this will happen automatically when you click the Copy button), then click the Run Process (3) button to complete the process.
+
+
 
 
 ## Configure HelloID
